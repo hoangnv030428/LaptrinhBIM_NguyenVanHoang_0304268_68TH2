@@ -1,27 +1,44 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-using Autodesk.Revit.UI;
+using Autodesk.Revit.Attributes;
 using Autodesk.Revit.DB;
-using Autodesk.Revit.UI.Selection;
-using System.Windows.Forms;
+using Autodesk.Revit.UI;
+
 namespace ClassLibrary1
 {
-    [Autodesk.Revit.Attributes.Transaction(Autodesk.Revit
-        .Attributes.TransactionMode.Manual)]
+    [Transaction(TransactionMode.Manual)]
     public class Class1 : IExternalCommand
     {
-        public Result Execute(ExternalCommandData
-        commandData, ref string message, ElementSet elements)
+        public Result Execute(ExternalCommandData commandData, ref string message, ElementSet elements)
         {
-            MessageBox.Show("chill ");
-            for (int i = 0; i < 6; i++)
+            UIDocument uidoc = commandData.Application.ActiveUIDocument;
+            Document doc = uidoc.Document;
+
+            ICollection<ElementId> selectedIds = uidoc.Selection.GetElementIds();
+            Autodesk.Revit.UI.TaskDialog.Show("Revit", "Số lượng đối tượng được chọn: " + selectedIds.Count.ToString());
+
+            ICollection<ElementId> selectedWallIds = new List<ElementId>();
+            foreach (ElementId id in selectedIds)
             {
-                MessageBox.Show(i.ToString());
+                Element elements1 = doc.GetElement(id);
+                if (elements1 is Wall)
+                {
+                    selectedWallIds.Add(id);
+                }
             }
-            MessageBox.Show("check");
+
+            // Set the created element set as current select element set.
+            uidoc.Selection.SetElementIds(selectedWallIds);
+
+            if (0 != selectedWallIds.Count)
+            {
+                Autodesk.Revit.UI.TaskDialog.Show("Revit", selectedWallIds.Count.ToString() + " Đối tượng Tường đã được chọn!");
+            }
+            else
+            {
+                Autodesk.Revit.UI.TaskDialog.Show("Revit", "Không có đối tượng tường nào được chọn!");
+            }
+
             return Result.Succeeded;
         }
     }
