@@ -1,44 +1,29 @@
-﻿using System;
-using System.Collections.Generic;
-using Autodesk.Revit.Attributes;
+﻿using Autodesk.Revit.Attributes;
 using Autodesk.Revit.DB;
 using Autodesk.Revit.UI;
+using System;
+using System.Collections.Generic;
+using System.Text;
 
-namespace ClassLibrary1
+namespace B003_MaterialFilter
 {
-    [Transaction(TransactionMode.Manual)]
+    [Autodesk.Revit.Attributes.Transaction(Autodesk.Revit.Attributes.TransactionMode.Manual)]
     public class Class1 : IExternalCommand
     {
         public Result Execute(ExternalCommandData commandData, ref string message, ElementSet elements)
         {
-            UIDocument uidoc = commandData.Application.ActiveUIDocument;
-            Document doc = uidoc.Document;
+            Document doc = commandData.Application.ActiveUIDocument.Document;
+            FilteredElementCollector collector = new FilteredElementCollector(doc);
 
-            ICollection<ElementId> selectedIds = uidoc.Selection.GetElementIds();
-            Autodesk.Revit.UI.TaskDialog.Show("Revit", "Số lượng đối tượng được chọn: " + selectedIds.Count.ToString());
+            ElementCategoryFilter filter = new ElementCategoryFilter(BuiltInCategory.OST_Materials);
+            IList<Element> matList = collector.WherePasses(filter).WhereElementIsNotElementType().ToElements();
 
-            ICollection<ElementId> selectedWallIds = new List<ElementId>();
-            foreach (ElementId id in selectedIds)
+            StringBuilder result = new StringBuilder();
+            foreach (Element ele in matList)
             {
-                Element elements1 = doc.GetElement(id);
-                if (elements1 is Wall)
-                {
-                    selectedWallIds.Add(id);
-                }
+                result.AppendLine(ele.Category.Name + "\t" + ele.Name + "\t" + ele.Id);
             }
-
-            // Set the created element set as current select element set.
-            uidoc.Selection.SetElementIds(selectedWallIds);
-
-            if (0 != selectedWallIds.Count)
-            {
-                Autodesk.Revit.UI.TaskDialog.Show("Revit", selectedWallIds.Count.ToString() + " Đối tượng Tường đã được chọn!");
-            }
-            else
-            {
-                Autodesk.Revit.UI.TaskDialog.Show("Revit", "Không có đối tượng tường nào được chọn!");
-            }
-
+            MessageBox.Show("Tất cả các materials trong project là:\r\n" + result.ToString());
             return Result.Succeeded;
         }
     }
